@@ -3,26 +3,34 @@ import pymongo
 from pymongo.errors import ServerSelectionTimeoutError
 from datetime import datetime
 import pandas as pd
-
+import certifi
 # Global client
 client = None
 
 @st.cache_resource(show_spinner="Connecting to database...")
+@st.cache_resource(show_spinner="Connecting to MongoDB Atlas...")
 def init_connection():
     try:
-        uri = st.secrets["uri"]
-        client = pymongo.MongoClient(uri, serverSelectionTimeoutMS=5000)
-        # Force a call to check if connection is active
-        client.server_info()
+        # Pull from Streamlit Secrets
+        uri = st.secrets["mongo"]["uri"]
+        
+        # Use certifi to resolve the SSL Handshake error
+        client = pymongo.MongoClient(
+            uri, 
+            tlsCAFile=certifi.where(),
+            serverSelectionTimeoutMS=5000  # Fail fast if connection is bad
+        )
+        
+        # This triggers the actual connection attempt
+        client.admin.command('ping') 
         return client
     except Exception as e:
-        st.error(f"Failed to connect to MongoDB: {e}")
+        st.error(f"MongoDB Connection Error: {e}")
         return None
 
 def get_db():
-    global client
-    if client is None:
-        client = init_connection()
+    # Call the cached function directly
+    client = init_connection()
     if client:
         return client.get_database("medical_diagnostic_system")
     return None

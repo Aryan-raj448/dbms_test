@@ -1,3 +1,4 @@
+streamlit
 pymongo[srv]
-pandas
 certifi
+pandas

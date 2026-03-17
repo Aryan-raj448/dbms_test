@@ -1,0 +1,3 @@
+.myenv/
+secrets.toml
+__pycache__/
